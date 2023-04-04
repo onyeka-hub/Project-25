@@ -1,0 +1,7 @@
+# global.nodeSelector: {
+#   kubernetes.io/hostname: "ip-10-0-0-21.us-east-2.compute.internal"
+# }
+
+artifactory.startup.Probe.enabled: false
+
+waitForDatabase: false

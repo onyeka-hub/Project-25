@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: artifactory
+  namespace: tools
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: "tooling.artifactory.onyeka.ga"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: artifactory-artifactory-nginx
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - "tooling.artifactory.onyeka.ga"
+    secretName: "tooling.artifactory.onyeka.ga"
+

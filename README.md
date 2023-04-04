@@ -877,6 +877,11 @@ cert-manager-cainjector   1/1     1            1           89s
 cert-manager-webhook      1/1     1            1           89s
 ```
 
+If you want to completely uninstall cert-manager from your cluster, you will also need to delete the previously installed CustomResourceDefinition resources:
+```
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yam
+```
+
 ### Certificate Issuer
 Next, is to create an Issuer. We will use a Cluster Issuer so that it can be scoped globally. Assuming that we will be using onyeka.ga domain. Simply update this cert-manager.yaml file and deploy with kubectl. In the section that follows, we will break down each part of the file.
 

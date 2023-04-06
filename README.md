@@ -1130,6 +1130,15 @@ Skip repositories creation because you will do this in the next poject.
 
 Then complete the setup.
 
+For upgrading and troubleshooting
+```
+helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=ClusterIP -n ingress-nginx
+
+helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=LoadBalancer -n ingress-nginx
+
+helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+```
+
 Congratulations! for completing Project 25
 
 In the next project, you will experience;

@@ -31,14 +31,17 @@ Lets get into action and see how all of these work.
 The best approach to easily get Artifactory into kubernetes is to use helm.
 
 1. Search for an official helm chart for Artifactory on Artifact Hub
+
 2. Add the jfrog remote repository on your laptop/computer
 ```
 helm repo add jfrog https://charts.jfrog.io
 ```
+
 3. Create a namespace called tools where all the tools for DevOps will be deployed. (In previous project, you installed Jenkins in the default namespace. You should uninstall Jenkins there and install in the new namespace)
 ```
 kubectl create ns tools
 ```
+
 4. Update the helm repo index on your laptop/computer
 ```
 helm repo update
@@ -47,11 +50,9 @@ helm repo update
 5. Install artifactory
 ```
 helm upgrade --install artifactory jfrog/artifactory -n tools
-
 ```
 
 For changing the nginx service type to ClusterIP instead of LoadBalancer
-
 ```
 helm upgrade --install artifactory jfrog/artifactory --set nginx.service.type=ClusterIP -n tools
 ```
@@ -85,6 +86,7 @@ I could not deploy artifactory. The "artifactory" container will not run because
 
 ## Solution
 I learnt that the issue is because the EBS volume attached to the nodes of the eks cluster is small and not sufficient to deploy artifactory. It was 20Gib and when I increased it to 500Gib the problem was solved.
+
 ### Getting the Artifactory URL
 Lets break down the first Next Step.
 
@@ -378,12 +380,41 @@ Events:
   Normal   Started                 2m40s                 kubelet                  Started container artifactory
   Warning  Unhealthy               2m7s (x5 over 2m27s)  kubelet                  Startup probe failed:
 ```
+
 ```
 $ kubectl get po -n tools
 NAME                                             READY   STATUS    RESTARTS   AGE
 artifactory-0                                    1/1     Running   0          4m15s
 artifactory-artifactory-nginx-7d57dfb7b8-9hhsv   1/1     Running   0          4m15s
 artifactory-postgresql-0                         1/1     Running   0          4m15s
+```
+
+```
+$ kubectl get all -n tools
+NAME                                                 READY   STATUS    RESTARTS      AGE
+pod/artifactory-0                                    8/8     Running   1 (32s ago)   5m46s
+pod/artifactory-artifactory-nginx-59575fcdf5-f5prl   1/1     Running   0             5m47s
+pod/artifactory-postgresql-0                         1/1     Running   0             5m47s
+
+NAME                                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                
+      AGE
+service/artifactory                       ClusterIP   172.20.118.119   <none>        8082/TCP,8085/TCP,8081/TCP   5m48s
+service/artifactory-artifactory-nginx     ClusterIP   172.20.182.6     <none>        80/TCP,443/TCP         
+      5m48s
+service/artifactory-postgresql            ClusterIP   172.20.208.215   <none>        5432/TCP               
+      5m48s
+service/artifactory-postgresql-headless   ClusterIP   None             <none>        5432/TCP               
+      5m48s
+
+NAME                                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/artifactory-artifactory-nginx   1/1     1            1           5m48s
+
+NAME                                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/artifactory-artifactory-nginx-59575fcdf5   1         1         1       5m49s
+
+NAME                                      READY   AGE
+statefulset.apps/artifactory              1/1     5m49s
+statefulset.apps/artifactory-postgresql   1/1     5m49s
 ```
 
 2. Each of the deployed application have their respective services. This is how you will be able to reach either of them.
@@ -447,7 +478,7 @@ For now, we will leave artifactory, move on to the next phase of configuration (
 ## DEPLOYING INGRESS CONTROLLER AND MANAGING INGRESS RESOURCES
 Before we discuss what ingress controllers are, it will be important to start off understanding about the Ingress resource.
 
-An ingress is an API object that manages external access to the services in a kubernetes cluster. It is capable to provide load balancing, SSL termination and name-based virtual hosting. In otherwords, Ingress exposes HTTP and HTTPS routes from outside the cluster to services within the cluster. Traffic routing is controlled by rules defined on the Ingress resource.
+An ingress is an API object that manages external access to the services in a kubernetes cluster. It is capable of providing load balancing, SSL termination and name-based virtual hosting. In otherwords, Ingress exposes HTTP and HTTPS routes from outside the cluster to services within the cluster. Traffic routing is controlled by rules defined on the Ingress resource.
 
 ![ingress diagram](./images/ingress-diagram.PNG)
 
@@ -506,7 +537,7 @@ Lets get into action and see how all of these fits together.
 **Note**: Before deploying the ingress controller, remember to change the nginx.service.type of the artifactory from LoadBalancer to ClusterIP with the below command
 
 ```
-helm upgrade --install artifactory --namespace artifactory jfrog/artifactory --set nginx.service.type=ClusterIP,databaseUpgradeReady=true -n tools
+helm upgrade --install artifactory jfrog/artifactory --set nginx.service.type=ClusterIP,databaseUpgradeReady=true -n tools
 ```
 
 ```
@@ -641,7 +672,7 @@ If anyone were to visit the tool, it would be very inconvenient sharing the long
 
 The onyeka.ga part of the domain is the configured HOSTED ZONE in AWS. So you will need to configure Hosted Zone in AWS console or as part of your infrastructure as code using terraform.
 
-If you purchased the domain directly from AWS, the hosted zone will be automatically configured for you. But if your domain is registered with a different provider such as freenon or namechaep, you will have to create the hosted zone and update the name servers.
+If you purchased the domain directly from AWS, the hosted zone will be automatically configured for you. But if your domain is registered with a different provider such as namechaep, you will have to create the hosted zone and update the name servers.
 
 ### Create Route53 record
 
@@ -727,7 +758,7 @@ Congratulations. You have just deployed JFrog Artifactory!
 
 ![artifactory get started page](./images/artifactory-get-started.PNG)
 
-3. Reset the admin password
+3. Reset the admin password - Onyeka123456789
 
 ![artifactory get started page](./images/artifactory-reset-password.PNG)
 
@@ -736,12 +767,13 @@ Congratulations. You have just deployed JFrog Artifactory!
 ![artifactory get started page](./images/artifactory-lisence-page.PNG)
 
 
-5. For learning purposes, you can apply for a free trial license. Simply fill the form here https://jfrog.com/start-free/ and a license key will be delivered to your email in few minutes.
+5. For learning purposes, you can apply for a free trial license. Simply fill the form here https://jfrog.com/start-free/, use the **Self-Hosted** button and a license key will be delivered to your email in few minutes.
 
-![artifactory get started page](./images/artifactory-get-license.PNG)
+![artifactory get started page](./images/artifactory-get-license3.PNG)
+
+![artifactory get started page](./images/artifactory-get-license4.PNG)
 
 ![artifactory get started page](./images/artifactory-get-license2.PNG)
-
 
 6. In exactly 1 minute, the license key had arrived. Simply copy the key and apply to the console.
 
@@ -807,7 +839,7 @@ You will find ISRG Root X1 in the list of certificates already installed in your
 
 Read the official documentation here https://letsencrypt.org/docs/certificate-compatibility/
 
-Cert-maanager will ensure certificates are valid and up to date, and attempt to renew 
+Cert-manager will ensure certificates are valid and up to date, and attempt to renew 
 certificates at a configured time before expiry.
 
 ### Cert-Manager high Level Architecture
@@ -826,13 +858,13 @@ After we have deployed cert-manager, you will see all of this in action.
 Before installing the chart, you must first install the cert-manager CustomResourceDefinition resources. This is performed in a separate step to allow you to easily uninstall and reinstall cert-manager without deleting your installed custom resources.
 
 ```
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.crds.yaml
 
 ## Add the Jetstack Helm repository
 helm repo add jetstack https://charts.jetstack.io
 
 ## Install the cert-manager helm chart
-helm upgrade -i cert-manager --version v1.11.0 jetstack/cert-manager --create-namespace --namespace cert-manager 
+helm upgrade -i cert-manager --version v1.13.2 jetstack/cert-manager --create-namespace --namespace cert-manager 
 
 OR Let's add the repo and install the cert-manager Helm chart with this one-liner:
 
@@ -1135,8 +1167,6 @@ For upgrading and troubleshooting
 helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=ClusterIP -n ingress-nginx
 
 helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=LoadBalancer -n ingress-nginx
-
-helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
 Congratulations! for completing Project 25

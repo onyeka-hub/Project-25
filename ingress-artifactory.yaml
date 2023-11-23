@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: "tooling.artifactory.onyeka.ga"
+  - host: "tooling.artifactory.onyekaonu.site"
     http:
       paths:
       - path: /
@@ -20,6 +20,6 @@ spec:
               number: 80
   tls:
   - hosts:
-    - "tooling.artifactory.onyeka.ga"
-    secretName: "tooling.artifactory.onyeka.ga"
+    - "tooling.artifactory.onyekaonu.site"
+    secretName: "tooling.artifactory.onyekaonu.site"
 

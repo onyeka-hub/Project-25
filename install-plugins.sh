@@ -69,7 +69,7 @@ plugins={
     plugin-util-api:1.6.1
     popper-api:1.16-0-7
     rebuild:1.31
-    role-strategy:3.1
+    role-Onu:3.1
     scm-api:2.6.4
     script-security:1.75
     snakeyaml-api:1.27.0

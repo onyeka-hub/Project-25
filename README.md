@@ -33,27 +33,27 @@ The best approach to easily get Artifactory into kubernetes is to use helm.
 1. Search for an official helm chart for Artifactory on Artifact Hub
 
 2. Add the jfrog remote repository on your laptop/computer
-```
+```sh
 helm repo add jfrog https://charts.jfrog.io
 ```
 
 3. Create a namespace called tools where all the tools for DevOps will be deployed. (In previous project, you installed Jenkins in the default namespace. You should uninstall Jenkins there and install in the new namespace)
-```
+```sh
 kubectl create ns tools
 ```
 
 4. Update the helm repo index on your laptop/computer
-```
+```sh
 helm repo update
 ```
 
 5. Install artifactory
-```
+```sh
 helm upgrade --install artifactory jfrog/artifactory -n tools
 ```
 
 For changing the nginx service type to ClusterIP instead of LoadBalancer
-```
+```sh
 helm upgrade --install artifactory jfrog/artifactory --set nginx.service.type=ClusterIP -n tools
 ```
 
@@ -431,8 +431,8 @@ artifactory-postgresql-headless   ClusterIP      None             <none>
 ```
 
 3. Notice that, the Nginx Proxy has been configured to use the service type of LoadBalancer. Therefore, to reach Artifactory, we will need to go through the Nginx proxy’s service. Which happens to be a load balancer created in the cloud provider. Run the kubectl command to retrieve the Load Balancer URL.
-```
- kubectl get svc artifactory-artifactory-nginx -n tools
+```sh
+kubectl get svc artifactory-artifactory-nginx -n tools
 ```
 
 4. Copy the URL and paste in the browser
@@ -461,7 +461,7 @@ Helm uses the values.yaml file to set every single configuration that the chart 
 
 - Search for nginx.service and select nginx.service.type
 
-- You will see the confired type of Kubernetes service for Nginx. As you can see, it is LoadBalancer by default
+- You will see the configured type of Kubernetes service for Nginx. As you can see, it is LoadBalancer by default
 
 - To work directly with the values.yaml file, you can download the file locally by clicking on the download icon.
 
@@ -483,7 +483,7 @@ An ingress is an API object that manages external access to the services in a ku
 ![ingress diagram](./images/ingress-diagram.PNG)
 
 An ingress resource for Artifactory would like like below
-```
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -528,7 +528,7 @@ There are many other 3rd party Ingress controllers that provide similar function
 - Kong
 - Gloo
 
-An example comparison matrix of some of the controllers can be found here https://kubevious.io/blog/post/comparing-top-ingress-controllers-for-kubernetes#comparison-matrix. Understanding their unique features will help businesses determine which product works well for their respective requirements.
+An example comparison matrix of some of the controllers can be found [here](https://kubevious.io/blog/post/comparing-top-ingress-controllers-for-kubernetes#comparison-matrix). Understanding their unique features will help businesses determine which product works well for their respective requirements.
 
 It is possible to deploy any number of ingress controllers in the same cluster. That is the essence of an ingress class. By specifying the spec ingressClassName field on the ingress object, the appropriate ingress controller will be used by the ingress resource.
 
@@ -536,7 +536,7 @@ Lets get into action and see how all of these fits together.
 
 **Note**: Before deploying the ingress controller, remember to change the nginx.service.type of the artifactory from LoadBalancer to ClusterIP with the below command
 
-```
+```sh
 helm upgrade --install artifactory jfrog/artifactory --set nginx.service.type=ClusterIP,databaseUpgradeReady=true -n tools
 ```
 
@@ -558,7 +558,7 @@ Since this controller is maintained by Kubernetes, there is an official guide th
 Using the Helm approach, according to the official guide;
 
 1. Install Nginx Ingress Controller in the ingress-nginx namespace
-```
+```sh
 helm upgrade --install ingress-nginx ingress-nginx \
 --repo https://kubernetes.github.io/ingress-nginx \
 --namespace ingress-nginx --create-namespace
@@ -575,17 +575,18 @@ This command is idempotent:
 - **Self Challenge Task** – Delete the installation after running above command. Then try to re-install it using a slightly different method you are already familiar with. Ensure NOT to use the flag --repo
 
 - **Hint** – Run the helm repo add command before installation
-```
+
+```sh
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
 ```
 
 2. A few pods should start in the ingress-nginx namespace:
-```
+```sh
 kubectl get pods --namespace=ingress-nginx
 ```
 
 3. After a while, they should all be running. The following command will wait for the ingress controller pod to be up, running, and ready:
-```
+```sh
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
@@ -593,7 +594,7 @@ kubectl wait --namespace ingress-nginx \
 ```
 
 4. Check to see the created load balancer in AWS.
-```
+```sh
 kubectl get service -n ingress-nginx
 ```
 
@@ -611,7 +612,7 @@ The **ingress-nginx-controller** service that was created is of the type **LoadB
 If you go ahead to AWS console, copy the address in the **EXTERNAL-IP** column, and search for the loadbalancer, you will see an output like below.
 
 5. Check the IngressClass that identifies this ingress controller.
-```
+```sh
 kubectl get ingressclass -n ingress-nginx
 ```
 
@@ -627,7 +628,7 @@ Now, it is time to configure the ingress so that we can route traffic to the Art
 
 Notice the spec section with the configuration that selects the ingress controller using the ingressClassName
 
-```
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -647,11 +648,10 @@ spec:
               number: 8082
 ```
 
-```
+```sh
 kubectl apply -f <filename.yaml> -n tools
-```
-```
-$ kubectl get ing -n tools
+
+kubectl get ing -n tools
 ```
 
 ### Output
@@ -668,7 +668,7 @@ Now, take note of
 
 ### Configure DNS
 
-If anyone were to visit the tool, it would be very inconvenient sharing the long load balancer address. Ideally, you would create a DNS record that is human readable and can direct request to the balancer. This is exactly what has been configured in the ingress object - host: "tooling.tooling.artifactory.onyeka.ga" but without a DNS record, there is no way that host address can reach the load balancer.
+If anyone were to visit the tool, it would be very inconvenient sharing the long load balancer address. Ideally, you would create a DNS record that is human readable and can direct request to the balancer. This is exactly what has been configured in the ingress object - host: "tooling.artifactory.onyeka.ga" but without a DNS record, there is no way that host address can reach the load balancer.
 
 The onyeka.ga part of the domain is the configured HOSTED ZONE in AWS. So you will need to configure Hosted Zone in AWS console or as part of your infrastructure as code using terraform.
 
@@ -692,7 +692,7 @@ Within the hosted zone is where all the necessary DNS records will be created. S
 
 2. Select the region and the load balancer required. You will not need to type in the load balancer, as it will already populate.
 
-For detailed read on selecting between CNAME and Alias based records, read the official documentation https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html.
+For detailed read on selecting between CNAME and Alias based records, read the official [documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html).
 
 ### Visiting the application from the browser
 
@@ -767,7 +767,7 @@ Congratulations. You have just deployed JFrog Artifactory!
 ![artifactory get started page](./images/artifactory-lisence-page.PNG)
 
 
-5. For learning purposes, you can apply for a free trial license. Simply fill the form here https://jfrog.com/start-free/, use the **Self-Hosted** button and a license key will be delivered to your email in few minutes.
+5. For learning purposes, you can apply for a free trial license. Simply fill the form [here](https://jfrog.com/start-free/), use the **Self-Hosted** button and a license key will be delivered to your email in few minutes.
 
 ![artifactory get started page](./images/artifactory-get-license3.PNG)
 
@@ -837,7 +837,7 @@ In this project, We will use Let’s Encrypt with cert-manager. The certificates
 
 You will find ISRG Root X1 in the list of certificates already installed in your browser.
 
-Read the official documentation here https://letsencrypt.org/docs/certificate-compatibility/
+Read the official documentation [here](https://letsencrypt.org/docs/certificate-compatibility/)
 
 Cert-manager will ensure certificates are valid and up to date, and attempt to renew 
 certificates at a configured time before expiry.
@@ -853,11 +853,11 @@ After we have deployed cert-manager, you will see all of this in action.
 
 ### Deploying Cert-manager
 
-**Note**: Please refer to https://github.com/onyeka-hub/devops-tools-training.git for proper guildlines on the installation of cert-manager with an appropriate service account.
+**Note**: Please refer to [here](https://github.com/onyeka-hub/devops-tools-training.git) for proper guildlines on the installation of cert-manager with an appropriate service account.
 
 Before installing the chart, you must first install the cert-manager CustomResourceDefinition resources. This is performed in a separate step to allow you to easily uninstall and reinstall cert-manager without deleting your installed custom resources.
 
-```
+```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.crds.yaml
 
 ## Add the Jetstack Helm repository
@@ -917,7 +917,7 @@ kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download
 ### Certificate Issuer
 Next, is to create an Issuer. We will use a Cluster Issuer so that it can be scoped globally. Assuming that we will be using onyeka.ga domain. Simply update this cert-manager.yaml file and deploy with kubectl. In the section that follows, we will break down each part of the file.
 
-```
+```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -943,7 +943,7 @@ Lets break down the content to undertsand all the sections
 
 - Section 1 – The standard kubernetes section that defines the apiVersion, Kind, and metadata. The Kind here is a ClusterIssuer which means it is scoped globally.
 
-```
+```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -961,7 +961,7 @@ which can be used for all production websites. Or it can be replaced with the st
   https://acme-staging-v02.api.letsencrypt.org/directory for all Non-Production sites.
 
 The **privateKeySecretRef** has configuration for the private key name you prefer to use to store the ACME account private key. This can be anything you specify, for example letsencrypt-staging
-```
+```yaml
 spec:
  acme:
     # The ACME server URL
@@ -975,7 +975,7 @@ spec:
 - section 3 – This section is part of the spec that configures **solvers** which determines the domain address that the issued certificate will be registered with. **dns01** is one of the different challenges that cert-manager uses to verify domain ownership. Read more on DNS01 Challenge here https://letsencrypt.org/docs/challenge-types/#dns-01-challenge. With the **DNS01** configuration, you will need to specify the Route53 DNS Hosted Zone ID and region. Since we are using EKS in AWS, the IAM permission of the worker nodes will be used to access Route53. Therefore if appropriate permissions is not set for EKS worker nodes, it is possible that certificate challenge with Route53 will fail, hence certificates will not get issued.
 
 The other possible option is the HTTP01 challenge, but we won’t be using that here.
-```
+```yaml
 solvers:
 - selector:
     dnsZones:
@@ -985,7 +985,7 @@ dns01:
     region: "us-east-2"
     hostedZoneID: "Z2CD4NTR2FDPZ"
 ```
-```
+```sh
 kubectl apply -f clusterissuer.yaml
 ```
 
@@ -995,7 +995,7 @@ With the ClusterIssuer properly configured, it is now time to start getting cert
 
 To ensure that every created ingress also has TLS configured, we will need to update the ingress manifest with TLS specific configurations.
 
-```
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1034,14 +1034,14 @@ Lets quickly talk about Annotations. Annotations are used similar to labels in k
 
 The Annotation added to the Ingress resource adds metadata to specify the issuer responsible for requesting certificates. The issuer here will be the same one we have created earlier with the name **letsencrypt-prod**.
 
-```
+```yaml
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 ```
 
 The other section is tls where the host name that will require https is specified. The secretName also holds the name of the secret that will be created which will store details of the certificate key-pair. i.e Private key and public certificate.
 
-```
+```yaml
   tls:
   - hosts:
     - "tooling.artifactory.onyeka.ga"
@@ -1076,7 +1076,7 @@ tooling.artifactory.onyeka.ga       True             tooling.artifactory.onyeka.
 ```
 
 Notice the secret name there in the above output. Executing the command
-```
+```sh
 kubectl get secret tooling.artifactory.onyeka.ga -o yaml -n tools
 ```
 you will see the **data** with encoded version of both the private key tls.key and the public certificate tls.crt. This is the actual certificate configuration that the ingress controller will use as part of Nginx configuration to terminate TLS/SSL on the ingress.
@@ -1113,7 +1113,7 @@ If you now head over to the browser, you should see the padlock sign without war
 ![artifactory secure page](./images/secure-page.PNG)
 
 Finally, one more task for you to do is to ensure that the LoadBalancer created for artifactory is destroyed. If you run a get service kubectl command like below;
-```
+```sh
 kubectl get service -n tools
 ```
 You will see that the load balancer is still there.
@@ -1125,7 +1125,7 @@ Your final output should look like this.
 ![artifactory secure page](./images/svc-tools.PNG)
 
 Finally, update the ingress to use **artifactory-artifactory-nginx** as the backend service instead of using artifactory. Remember to update the port number as well.
-```
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1163,7 +1163,7 @@ Skip repositories creation because you will do this in the next poject.
 Then complete the setup.
 
 For upgrading and troubleshooting
-```
+```sh
 helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=ClusterIP -n ingress-nginx
 
 helm upgrade -i ingress-nginx ingress-nginx/ingress-nginx --set controller.service.type=LoadBalancer -n ingress-nginx

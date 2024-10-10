@@ -910,7 +910,7 @@ cert-manager-webhook      1/1     1            1           89s
 ```
 
 If you want to completely uninstall cert-manager from your cluster, you will also need to delete the previously installed CustomResourceDefinition resources:
-```
+```sh
 kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yam
 ```
 
